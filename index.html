@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Realm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Three.js is loaded straight from a CDN: no build step, no Node.js needed. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- 3D canvas and floating labels are inserted here by js/main.js -->
+
+  <div id="crosshair"></div>
+  <div id="prompt" hidden></div>
+
+  <aside id="info" hidden>
+    <p id="info-type"></p>
+    <h2 id="info-name"></h2>
+    <div id="info-desc"></div>
+    <p class="hint">Press <kbd>E</kbd> or click to close</p>
+  </aside>
+
+  <canvas id="minimap" width="480" height="480" title="Press M to enlarge"></canvas>
+  <div id="coords"></div>
+
+  <div id="overlay" hidden>
+    <div class="card">
+      <h1 id="world-name">The Realm</h1>
+      <p class="subtitle">A walkable map of our campaign</p>
+      <button id="start" type="button">Click to explore</button>
+      <p id="touch-note" hidden>Walking around needs a keyboard and mouse.</p>
+      <ul class="controls">
+        <li><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> walk</li>
+        <li><span><kbd>Mouse</kbd></span> look around</li>
+        <li><span><kbd>Shift</kbd></span> run</li>
+        <li><span><kbd>Space</kbd></span> jump</li>
+        <li><span><kbd>E</kbd> / click</span> read about a place</li>
+        <li><span><kbd>M</kbd></span> big map</li>
+        <li><span><kbd>Esc</kbd></span> pause</li>
+      </ul>
+      <h3>Travel to</h3>
+      <div id="travel"></div>
+    </div>
+  </div>
+
+  <div id="message">Loading world…</div>
+
+  <script>
+    // Browsers refuse to load modules and data from file:// — explain instead of showing a blank page.
+    if (location.protocol === 'file:') {
+      var m = document.getElementById('message');
+      m.className = 'error';
+      m.innerHTML = '<strong>This page needs a local web server.</strong><br>' +
+        'Open a terminal in the project folder and run <code>php -S localhost:8000</code> ' +
+        '(or <code>python3 -m http.server 8000</code>), then visit ' +
+        '<code>http://localhost:8000</code>.';
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
