@@ -332,12 +332,12 @@ export default {
     {
       const h = Y(HOLD);
       for (const [x, z, s] of [[-9.5, 2.2, 1.0], [-9.5, 1.1, 0.9], [-8.4, 2.4, 1.0], [-9.4, 2.2, 0.8]]) crate(x, h + (s === 0.8 ? 1.0 : 0), z, s, ship, 0.1);
-      for (const [x, z] of [[-6.8, -2.4], [-6.0, -2.6], [-6.4, -1.8], [-4.2, 2.6], [-3.4, 2.5], [6.8, 1.7], [6.4, -1.6]]) barrel(x, h, z, ship);
+      for (const [x, z] of [[-6.8, -2.4], [-6.0, -2.6], [-6.4, -1.8], [-4.2, 2.6], [-3.4, 2.5], [8.0, 1.0], [7.9, -1.0]]) barrel(x, h, z, ship);
       for (const [x, z] of [[-1.2, -2.7], [-0.4, -2.8], [-0.8, -2.3]]) kit.ball(0.45, 0xc9b38c, x, h + 0.3, z, on).scale.set(1, 0.6, 0.8); // sacks
       crate(-1.2, h, 2.7, 1.0, ship, 0.1);
       crate(-1.1, h + 1.0, 2.7, 0.75, ship, -0.1);
       kit.box(0.5, 0.03, 0.35, 0xe8dcb0, -1.1, h + 1.76, 2.7, { ...on, ry: 0.4 }); // "Fragile" label
-      const solids = [[-9.5, 1.8, 1.4, 2.2], [-8.4, 2.4, 1.0, 1.0], [-6.4, -2.2, 1.6, 1.4], [-3.8, 2.55, 1.6, 0.9], [-0.8, -2.6, 1.8, 1.0], [-1.15, 2.7, 1.1, 1.1], [6.6, 1.7, 0.9, 0.9], [6.4, -1.6, 0.9, 0.9]];
+      const solids = [[-9.5, 1.8, 1.4, 2.2], [-8.4, 2.4, 1.0, 1.0], [-6.4, -2.2, 1.6, 1.4], [-3.8, 2.55, 1.6, 0.9], [-0.8, -2.6, 1.8, 1.0], [-1.15, 2.7, 1.1, 1.1], [8.0, 1.0, 0.9, 0.9], [7.9, -1.0, 0.9, 0.9]];
       for (const [x, z, w, d] of solids) { const p = P(x, z); kit.solidBox(w, d, p[0], p[1], h, h + 1.8); }
       // hammocks slung between beams, aft part of the hold
       for (const z of [-1.6, 1.4]) {
@@ -389,19 +389,18 @@ export default {
     // ============================================================ the jetty: crane, booth, clutter
     const gy = (x, z) => Math.max(kit.groundAt(x, z), Y(quay) - 0.05);
     // bollards along the jetty edges
-    for (const z of [17, 22, 27, 32]) for (const x of [-8.6, -0.8]) {
+    for (const z of [17, 25, 30, 34]) for (const x of [-8.6, -0.8]) {
       kit.cyl(0.22, 0.28, 0.7, 'iron', x, gy(x, z), z, { seg: 8 });
       kit.circle(x, z, 0.3, { y0: gy(x, z), y1: gy(x, z) + 1 });
     }
     // treadwheel crane at the jetty tip, swinging a crate out over the basin
     {
-      const cx = -1.6, cz = 17.2, g = gy(cx, cz);
+      const cx = -1.7, cz = 22.0, g = gy(cx, cz);
       kit.box(3.0, 0.4, 3.0, 'darkStone', cx, g, cz);
       kit.box(0.6, 7.5, 0.6, 'darkWood', cx, g + 0.4, cz);
       for (const s of [-1, 1]) beam([cx + s * 1.2, g + 0.4, cz + 1.2], [cx, g + 6, cz], 0.12, 'darkWood', kit.group);
-      const wheel = kit.cyl(2.0, 2.0, 0.9, 'wood', cx - 0.2, g + 2.6, cz - 1.1, { seg: 14, rx: Math.PI / 2 });
-      wheel.position.y = g + 2.6;
-      kit.cyl(0.5, 0.5, 1.0, 'darkWood', cx - 0.2, g + 2.6, cz - 1.15, { seg: 8, rx: Math.PI / 2 });
+      kit.cyl(1.6, 1.6, 0.8, 'wood', cx - 0.2, g + 2.2, cz - 1.1, { seg: 14, rx: Math.PI / 2 });
+      kit.cyl(0.45, 0.45, 0.9, 'darkWood', cx - 0.2, g + 2.2, cz - 1.15, { seg: 8, rx: Math.PI / 2 });
       kit.solidBox(3.0, 3.6, cx, cz - 0.3, g, g + 5);
       // jib reaching over the water (+x)
       beam([cx, g + 7.5, cz], [cx + 6.5, g + 8.5, cz], 0.18, 'darkWood', kit.group);
@@ -421,7 +420,7 @@ export default {
     kit.box(0.5, 0.02, 0.4, 0xe8dcb0, -6.9, 1.04 + gy(-6.6, 30), 30.9, { ry: 0.3 });
     kit.box(1.4, 0.9, 0.05, 0x2c3440, -5.1, 1.4 + gy(-6.6, 30), 31.75); // tally board outside
     // crates, barrels, nets and rope near the pier
-    for (const [x, z, s, ry] of [[-7.6, 19.0, 1.1, 0.1], [-7.4, 20.2, 1.0, -0.2], [-7.5, 19.5, 0.8, 0.3], [-2.4, 22.5, 1.0, 0.0], [-2.2, 23.6, 0.9, 0.4]]) {
+    for (const [x, z, s, ry] of [[-7.6, 19.0, 1.1, 0.1], [-7.4, 20.2, 1.0, -0.2], [-7.5, 19.5, 0.8, 0.3], [-2.4, 26.4, 1.0, 0.0], [-2.3, 27.6, 0.9, 0.4]]) {
       const stacked = s === 0.8 ? 1.1 : 0;
       crate(x, gy(x, z) + stacked, z, s, kit.group, ry);
       if (!stacked) kit.solidBox(s, s, x, z, gy(x, z), gy(x, z) + 2, ry);
@@ -432,8 +431,8 @@ export default {
     }
     kit.box(2.2, 0.15, 1.6, 0x4a5a3a, -5.0, gy(-5, 25.5), 25.5, { ry: 0.4 });    // drying net
     kit.box(1.8, 0.12, 1.2, 0x5a5a42, -4.8, gy(-5, 25.5) + 0.12, 25.7, { ry: -0.2 });
-    kit.cyl(0.5, 0.5, 0.22, 0xb59a6a, -3.3, gy(-3.3, 27), 27, { seg: 10 });
-    kit.cyl(0.25, 0.25, 0.23, 'darkWood', -3.3, gy(-3.3, 27), 27, { seg: 8 });
+    kit.cyl(0.5, 0.5, 0.22, 0xb59a6a, -3.6, gy(-3.6, 30), 30, { seg: 10 });
+    kit.cyl(0.25, 0.25, 0.23, 'darkWood', -3.6, gy(-3.6, 30), 30, { seg: 8 });
     lantern(-8.6, gy(-8.6, 17) + 2.6, 16.3, kit.group);
     kit.cyl(0.08, 0.1, 2.6, 'darkWood', -8.6, gy(-8.6, 17), 16.3, { seg: 6 });
 
@@ -450,16 +449,36 @@ export default {
     rowboat(SX - 6, SZ - 5.6, Math.PI / 2);
 
     // ============================================================ what you can read about
-    const mainLoc = kit.info({ id: place.id, name: place.name, kind: place.kind, description: place.description, x: PIER_X, z: 19, radius: 14, labelHeight: Y(quay) + 7 });
+    const mainLoc = kit.info({ id: place.id, name: place.name, kind: place.kind, description: place.description, x: PIER_X, z: 20, radius: 12, labelHeight: Y(quay) + 7 });
     const sp = kit.toWorld(PIER_X, 24);
     mainLoc.spawn = { x: sp.x, z: sp.z };
-    kit.info({ id: 'wandering-gull', name: 'The Wandering Gull', kind: 'Carrack', x: SX, z: SZ, radius: 9.5, labelHeight: Y(DECK) + 25, color: '#9fc4d8', travel: false,
+    kit.info({ id: 'wandering-gull', name: 'The Wandering Gull', kind: 'Carrack', x: SX, z: SZ, radius: 14, labelHeight: Y(DECK) + 25, color: '#9fc4d8', travel: false,
       description: 'A three-masted carrack out of Baldur\'s Gate, Captain Maren Saltbrook commanding. She brings Amnian wine and Waterdhavian cloth upriver and takes Holmstead wool back to the coast.\n\nThe crew is ashore spending their pay. Have a look around: the captain\'s cabin is under the sterncastle and the hold is down the main hatch.' });
     const cab = P(-9.5, 0);
-    kit.info({ id: 'gull-cabin', name: "Captain's Cabin", kind: 'The Wandering Gull', x: cab[0], z: cab[1], radius: 3.2, label: false, travel: false,
+    const cabinLoc = kit.info({ id: 'gull-cabin', name: "Captain's Cabin", kind: 'The Wandering Gull', x: cab[0], z: cab[1], radius: 3.2, label: false, travel: false,
       description: 'Charts of the Sword Coast from Luskan to Baldur\'s Gate cover the table. One of them has a red ink circle somewhere out in the Trackless Sea, with no name next to it.\n\nThe captain\'s sea chest is locked, and the lock is better than the chest.' });
     const hold = P(-3, 0);
-    kit.info({ id: 'gull-hold', name: 'Cargo Hold', kind: 'The Wandering Gull', x: hold[0], z: hold[1], radius: 4, label: false, travel: false,
+    const holdLoc = kit.info({ id: 'gull-hold', name: 'Cargo Hold', kind: 'The Wandering Gull', x: hold[0], z: hold[1], radius: 4, label: false, travel: false,
       description: 'Crates stamped with the seal of a Baldur\'s Gate trading coster, barrels of Amnian red and sacks of salt. A smaller crate on its own is marked "Fragile. Do not open below decks." in a careful hand.\n\nThe ship\'s cat is asleep on the salt and would like you to leave.' });
+
+    // The cabin and hold only offer their story when you are actually inside them
+    // (prompts otherwise only look at map distance, so they'd show up on deck too).
+    const v = new THREE.Vector3();
+    kit.animate(() => {
+      const cam = window.world?.camera;
+      if (!cam) return;
+      const feet = cam.position.y - 1.7;
+      v.copy(cam.position);
+      kit.group.worldToLocal(v);
+      const sx = v.x - SX, sz = v.z - SZ;
+      const inShip = sx > -HALF_L && sx < HALF_L && Math.abs(sz) < 4;
+      const inHold = inShip && feet > HOLD - 0.3 && feet < DECK - 1;
+      const inCabin = inShip && sx < -6.5 && feet > DECK - 0.3 && feet < STERN_DECK - 1;
+      for (const [loc, inside, home] of [[holdLoc, inHold, hold], [cabinLoc, inCabin, cab]]) {
+        const w = inside ? cam.position : kit.toWorld(home[0], home[1]);
+        loc.x = w.x; loc.z = w.z;
+        loc.radius = inside ? 6 : 0;
+      }
+    });
   },
 };
