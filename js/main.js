@@ -8,6 +8,7 @@ import {
 import { prepareLocations, buildLocations } from './locations.js';
 import { Player } from './player.js';
 import { UI, Minimap } from './ui.js';
+import { detectTouch, TouchControls } from './touch.js';
 
 const DATA_URL = 'data/locations.json';
 const LABEL_FADE_START = 180;  // labels start fading beyond this distance (m)
@@ -72,6 +73,8 @@ function createSky() {
 async function init() {
   const data = await loadData();
   const ui = new UI(data.name ?? 'The Realm');
+  let touchMode = detectTouch();
+  ui.setTouchMode(touchMode);
 
   const locations = prepareLocations(data.locations ?? []);
   const byId = new Map(locations.map((l) => [l.id, l]));
@@ -81,7 +84,7 @@ async function init() {
 
   // --- Renderer, scene, camera ---
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, touchMode ? 1.5 : 2)); // phones: fewer pixels, smoother
   renderer.setSize(innerWidth, innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.shadowMap.enabled = true;
@@ -104,7 +107,7 @@ async function init() {
   scene.add(new THREE.HemisphereLight(0xd6e9ff, 0x5a4a32, 1.3));
   const sun = new THREE.DirectionalLight(0xfff1d6, 3);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.setScalar(touchMode ? 1024 : 2048);
   Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 90, bottom: -90, near: 1, far: 450 });
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.05;
@@ -148,44 +151,91 @@ async function init() {
   addEventListener('hashchange', goToHash);
 
   // --- UI ---
-  const minimap = new Minimap(document.getElementById('minimap'), locations, lakes);
-  ui.buildTravelList(locations, (loc) => {
-    history.replaceState(null, '', `#${loc.id}`); // shareable link straight to this place
-    goToLocation(loc);
-    controls.lock();
-  });
-  ui.hideMessage();
-  ui.setOverlay(true);
-
-  document.getElementById('start').addEventListener('click', () => controls.lock());
-  controls.addEventListener('lock', () => ui.setOverlay(false));
-  controls.addEventListener('unlock', () => ui.setOverlay(true));
+  const minimapCanvas = document.getElementById('minimap');
+  const minimap = new Minimap(minimapCanvas, locations, lakes);
+  minimapCanvas.addEventListener('click', () => minimap.toggle());
 
   let nearby = null;
   let infoOpenedAt = null;
   const openInfo = (loc) => { ui.showInfo(loc); infoOpenedAt = camera.position.clone(); };
+  const toggleInfo = () => {
+    if (ui.openLocation) ui.hideInfo();
+    else if (nearby) openInfo(nearby);
+  };
+  document.getElementById('prompt').addEventListener('click', toggleInfo);
+  document.getElementById('info-close').addEventListener('click', () => ui.hideInfo());
 
-  addEventListener('keydown', (e) => {
-    if (e.code === 'KeyE') {
-      if (ui.openLocation) ui.hideInfo();
-      else if (nearby) openInfo(nearby);
-    } else if (e.code === 'KeyM') {
-      minimap.toggle();
-    }
-  });
-
-  // Click a building (aim with the crosshair) to read about it.
+  // Find the location under a point on screen (in -1..1 coordinates) and show its info.
   const raycaster = new THREE.Raycaster();
   raycaster.far = CLICK_RANGE;
   const clickables = [terrain, ...locations.map((l) => l.group)];
-  document.addEventListener('mousedown', (e) => {
-    if (!controls.isLocked || e.button !== 0) return;
+  function pickAt(ndcX, ndcY) {
     if (ui.openLocation) { ui.hideInfo(); return; }
-    raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+    raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera);
     const hit = raycaster.intersectObjects(clickables, true)[0];
     let o = hit?.object;
     while (o && !o.userData.location) o = o.parent;
     if (o) openInfo(o.userData.location);
+  }
+
+  // --- Playing / paused ---
+  // Desktop: playing while the mouse is captured (pointer lock); Esc pauses.
+  // Touch: playing after tapping "Tap to explore"; the ☰ button pauses.
+  let playing = false;
+  const touchUI = document.getElementById('touch-ui');
+  const touch = new TouchControls({
+    area: document.getElementById('touch-area'),
+    joystick: document.getElementById('joystick'),
+    stick: document.getElementById('stick'),
+    jumpButton: document.getElementById('btn-jump'),
+    camera,
+    player,
+    onTap: (x, y) => pickAt((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1),
+  });
+
+  function setPlaying(on) {
+    playing = on;
+    ui.setOverlay(!on);
+    touchUI.hidden = !(on && touchMode);
+    if (!on) touch.reset();
+  }
+
+  function start() {
+    if (touchMode) {
+      // Full screen hides the browser bars on Android; iPhones don't support it and just ignore this.
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setPlaying(true);
+    } else {
+      controls.lock();
+    }
+  }
+
+  controls.addEventListener('lock', () => setPlaying(true));
+  controls.addEventListener('unlock', () => setPlaying(false));
+  document.getElementById('btn-menu').addEventListener('click', () => setPlaying(false));
+  document.getElementById('start').addEventListener('click', start);
+
+  // A desktop-detected device that gets touched (e.g. a tablet in desktop mode) switches to touch controls.
+  addEventListener('touchstart', () => {
+    if (!touchMode) { touchMode = true; ui.setTouchMode(true); }
+  }, { once: true, passive: true });
+
+  ui.buildTravelList(locations, (loc) => {
+    history.replaceState(null, '', `#${loc.id}`); // shareable link straight to this place
+    goToLocation(loc);
+    start();
+  });
+  ui.hideMessage();
+  setPlaying(false);
+
+  addEventListener('keydown', (e) => {
+    if (e.code === 'KeyE') toggleInfo();
+    else if (e.code === 'KeyM') minimap.toggle();
+  });
+
+  // Desktop: click a building (aim with the crosshair) to read about it.
+  document.addEventListener('mousedown', (e) => {
+    if (controls.isLocked && e.button === 0) pickAt(0, 0);
   });
 
   addEventListener('resize', () => {
@@ -203,7 +253,7 @@ async function init() {
     const t = clock.elapsedTime;
     const pos = camera.position;
 
-    if (controls.isLocked) player.update(dt);
+    if (playing) player.update(dt);
     for (const fn of updates) fn(t);
 
     sky.position.copy(pos);
@@ -230,7 +280,7 @@ async function init() {
   });
 
   // Exposed for debugging from the browser console.
-  window.world = { scene, camera, player, locations, goToLocation };
+  window.world = { scene, camera, player, locations, goToLocation, touch };
 }
 
 if (location.protocol !== 'file:') {

@@ -30,6 +30,21 @@ Then open <http://localhost:8000>.
 | M | Toggle the big map |
 | Esc | Pause / travel menu |
 
+**Phones and tablets** get on-screen controls automatically:
+
+| Touch | Action |
+| --- | --- |
+| Left side: drag | Walk (a joystick appears under your thumb); drag past the ring to run |
+| Right side: drag | Look around |
+| Tap a building, or the "Read about…" button | Read about a place |
+| Jump button | Jump |
+| Tap the minimap | Big map |
+| ☰ | Pause / travel menu |
+
+A device counts as touch when its main pointer is a finger. Laptops with touchscreens use the
+keyboard and mouse controls, but switch to touch controls as soon as you touch the screen.
+To force a mode, add `?touch` or `?desktop` to the address, e.g. `http://localhost:8000/?touch`.
+
 The bottom-right corner shows your `x` / `z` position, which is handy for deciding where to put a new location.
 
 ## Adding your own locations
@@ -113,6 +128,7 @@ js/terrain.js         landscape, lakes, roads, trees and rocks
 js/locations.js       placeholder buildings and model loading
 js/player.js          walking, jumping and collisions
 js/ui.js              info panel, prompts and minimap
+js/touch.js           phone/tablet detection and on-screen controls
 models/               your .glb files
 ```
 
