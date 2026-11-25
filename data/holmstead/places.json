@@ -1,0 +1,70 @@
+{
+  "name": "Holmstead",
+  "subtitle": "A walkable map of our campaign",
+  "north": [1, 0],
+  "spawn": { "x": -97, "z": -38, "lookAt": [-45, 110] },
+
+  "districts": [
+    { "id": "west-village", "name": "West Village", "x": -89, "z": -369,
+      "description": "Narrow lanes of fishermen's cottages, chandlers and rope-walks on the far bank of the river. Washing lines cross the alleys and the smell of tar never quite leaves." },
+    { "id": "hightown", "name": "Hightown", "x": -328, "z": -108,
+      "description": "The merchants' quarter beside the harbour. Warehouses, counting-houses and the tall homes of shipping families who would very much like you to know they are wealthy." },
+    { "id": "oldtown", "name": "Oldtown", "x": 60, "z": -161,
+      "description": "The oldest part of Holmstead, with crooked streets around the Morninghall temple. Guildhalls, craftsmen and the River Road gate." },
+    { "id": "the-barrow", "name": "The Barrow", "x": 37, "z": 286,
+      "description": "A crowded working quarter built over an ancient burial mound. Taverns, tanneries and cheap lodgings. The locals say the old dead sleep lightly here." },
+    { "id": "castle", "name": "Holm Castle", "x": -45, "z": 110, "labelHeight": 48,
+      "description": "Seat of the Lord Warden of Holmstead. Its pale walls and blue-roofed towers watch over every gate of the town." }
+  ],
+
+  "places": [
+    {
+      "id": "laughing-lantern", "module": "tavern", "map": "T7",
+      "name": "The Laughing Lantern", "kind": "Tavern",
+      "x": 108.2, "z": 186.3, "footprint": true,
+      "description": "The loudest common room in the Barrow. Barkeep Dagna Ironhand pours Waterdhavian ale and Barrow stout, the stew is always on, and the notice board by the door is thick with job offers.\n\nRooms upstairs are 5 silver a night. Ask about the owlbear head above the hearth."
+    },
+    {
+      "id": "bubbling-flask", "module": "alchemist", "map": "M13",
+      "name": "The Bubbling Flask", "kind": "Alchemist",
+      "x": 414.3, "z": 97.6, "footprint": true,
+      "description": "Mirella Thornquill's alchemy shop, just outside the Monastery Gate. Potions of healing, antitoxin, alchemist's fire and stranger things simmer on every shelf.\n\nMirella buys rare reagents: owlbear feathers, troll blood, and anything that glows."
+    },
+    {
+      "id": "morninghall", "module": "temple", "map": "R1",
+      "name": "The Morninghall", "kind": "Temple of Lathander",
+      "x": 93.8, "z": -125.1, "w": 23.8, "d": 36.4, "angle": -24.6, "autoFront": true,
+      "description": "Holmstead's great temple to Lathander, the Morninglord, god of dawn, renewal and new beginnings. Rose and gold glass fills the nave with sunrise light.\n\nHigh Dawnbringer Aurelia Vance leads the dawn service. The temple offers healing, blessings, and a warm meal to anyone who rises early."
+    },
+    {
+      "id": "anchor-shrine", "module": "shrine", "map": "R2",
+      "name": "Shrine of the Anchor", "kind": "Seafaring shrine",
+      "x": -198.4, "z": -94.3, "w": 15.4, "d": 23.1, "angle": 5.5, "autoFront": true,
+      "description": "A small walled court near the harbour where sailors pray to Valkur the Mighty for fair winds, and leave coins to keep Umberlee's temper calm.\n\nThe bronze anchor in the middle was raised from the wreck of the Silver Gull. Touching it before a voyage is said to bring you home."
+    },
+    {
+      "id": "hammerfall-forge", "module": "smithy", "map": "B5",
+      "name": "Hammerfall Forge", "kind": "Blacksmith",
+      "x": 285.9, "z": -156.7, "footprint": true,
+      "description": "Bram Hammerfall's smithy by the River Road gate. Horseshoes, nails and farm tools by the cartload, and, for coin and patience, good steel blades and mail.\n\nThe forge has not gone cold in thirty years."
+    },
+    {
+      "id": "brightfurrow-farm", "module": "farm", "map": "R4",
+      "name": "Brightfurrow Farm", "kind": "Farm",
+      "x": 393.0, "z": -278.1, "footprint": true, "clear": 26,
+      "description": "The Oakley family farm on the River Road: wheat, barley, a few cows and far too many geese. Old Tobias Oakley swears something has been taking his sheep at night."
+    },
+    {
+      "id": "kelemvors-rest", "module": "graveyard",
+      "name": "Kelemvor's Rest", "kind": "Graveyard",
+      "x": 577.4, "z": 135.8, "w": 100, "d": 74, "angle": -59.2, "clear": 70,
+      "description": "Holmstead's graveyard on the Monastery Road, blessed in the name of Kelemvor, Lord of the Dead.\n\nCommon folk lie in the plain rows of the lower field. Behind the iron fence, the old families rest in stone crypts, and some of those doors have not been opened in a century."
+    },
+    {
+      "id": "harbour", "module": "harbour", "map": "S2, S3, H3, H4",
+      "name": "Holmstead Harbour", "kind": "Harbour",
+      "x": -354.8, "z": 31.5, "angle": -151.6, "clear": 0,
+      "description": "River barges and coastal ships tie up at the Hightown docks to unload timber, wool and salt fish. Harbourmaster Ostrin Pell charges a copper a crate and a silver for questions.\n\nThe carrack Wandering Gull is moored at the pier. Her crew is ashore, so have a look around."
+    }
+  ]
+}

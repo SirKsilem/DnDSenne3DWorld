@@ -1,24 +1,27 @@
-// First-person walking: mouse look (pointer lock), WASD, run, jump,
-// following the terrain and bumping into buildings, trees and rocks.
+// First-person walking: mouse look (pointer lock) or touch, WASD, run, jump.
+// Uses js/engine/physics.js for ground, floors, stairs, decks and walls.
 
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { heightAt, WATER_LEVEL, WORLD_SIZE } from './terrain.js';
+import { WATER_LEVEL } from './world/terrain.js';
 
 const EYE_HEIGHT = 1.7;
-const WALK_SPEED = 6;    // m/s
-const RUN_SPEED = 14;
-const JUMP_SPEED = 7;
+const BODY_HEIGHT = 1.8;
+const WALK_SPEED = 5;    // m/s
+const RUN_SPEED = 12;
+const JUMP_SPEED = 6.5;
 const GRAVITY = 22;
-const BODY_RADIUS = 0.45;
+const BODY_RADIUS = 0.35;
+const STEP = 0.5;        // you can walk up ledges this high
 
 const UP = new THREE.Vector3(0, 1, 0);
 const _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _wish = new THREE.Vector3();
 
 export class Player {
-  constructor(camera, domElement, colliders) {
+  constructor(camera, domElement, physics, bounds) {
     this.camera = camera;
-    this.colliders = colliders;
+    this.physics = physics;
+    this.bounds = bounds; // [minX, minZ, maxX, maxZ]
     this.controls = new PointerLockControls(camera, domElement);
     this.velocity = new THREE.Vector3();
     this.keys = new Set();
@@ -34,16 +37,12 @@ export class Player {
 
   get position() { return this.camera.position; }
 
-  // Feet never go deeper than ~1 m under water, so lakes are wadeable rather than a trap.
-  groundAt(x, z) {
-    return Math.max(heightAt(x, z), WATER_LEVEL - 1.1) + EYE_HEIGHT;
-  }
-
   teleport(x, z, lookAtX, lookAtZ) {
-    const y = this.groundAt(x, z);
-    this.camera.position.set(x, y, z);
+    const feet = this.physics.ground(x, z, 1e6);
+    this.camera.position.set(x, feet + EYE_HEIGHT, z);
     this.velocity.set(0, 0, 0);
-    if (lookAtX !== undefined) this.camera.lookAt(lookAtX, y, lookAtZ);
+    this.onGround = true;
+    if (lookAtX !== undefined) this.camera.lookAt(lookAtX, feet + EYE_HEIGHT, lookAtZ);
   }
 
   update(dt) {
@@ -60,42 +59,40 @@ export class Player {
     if (_wish.lengthSq() > 1) _wish.normalize(); // keys give full speed; a half-pushed joystick walks slower
 
     const pos = this.camera.position;
+    const feet = pos.y - EYE_HEIGHT;
     let speed = k.has('ShiftLeft') || k.has('ShiftRight') || t.run ? RUN_SPEED : WALK_SPEED;
-    if (heightAt(pos.x, pos.z) < WATER_LEVEL - 0.6) speed *= 0.45; // wading
+    const swimming = feet < WATER_LEVEL - 0.6;
+    if (swimming) speed *= 0.45;
 
-    const accel = 1 - Math.exp(-(this.onGround ? 12 : 3) * dt);
+    const accel = 1 - Math.exp(-(this.onGround || swimming ? 12 : 3) * dt);
     this.velocity.x += (_wish.x * speed - this.velocity.x) * accel;
     this.velocity.z += (_wish.z * speed - this.velocity.z) * accel;
-    if ((k.has('Space') || this.touchJump) && this.onGround) {
-      this.velocity.y = JUMP_SPEED;
+    if ((k.has('Space') || this.touchJump) && (this.onGround || swimming)) {
+      this.velocity.y = swimming ? 4 : JUMP_SPEED;
       this.onGround = false;
     }
+
+    pos.x += this.velocity.x * dt;
+    pos.z += this.velocity.z * dt;
+    this.physics.collide(pos, feet, BODY_HEIGHT, BODY_RADIUS, STEP);
+    const [x0, z0, x1, z1] = this.bounds;
+    pos.x = THREE.MathUtils.clamp(pos.x, x0, x1);
+    pos.z = THREE.MathUtils.clamp(pos.z, z0, z1);
+
+    // Vertical: gravity, floors and ceilings.
+    const ground = this.physics.ground(pos.x, pos.z, feet, STEP);
+    const ceiling = this.physics.ceiling(pos.x, pos.z, feet, STEP);
     this.velocity.y -= GRAVITY * dt;
-    pos.addScaledVector(this.velocity, dt);
-
-    // Push out of any collision circle we walked into.
-    for (const c of this.colliders) {
-      const dx = pos.x - c.x, dz = pos.z - c.z, min = c.r + BODY_RADIUS;
-      const d2 = dx * dx + dz * dz;
-      if (d2 < min * min) {
-        const d = Math.sqrt(d2) || 0.0001;
-        pos.x = c.x + (dx / d) * min;
-        pos.z = c.z + (dz / d) * min;
-      }
-    }
-
-    const limit = WORLD_SIZE / 2 - 4;
-    pos.x = THREE.MathUtils.clamp(pos.x, -limit, limit);
-    pos.z = THREE.MathUtils.clamp(pos.z, -limit, limit);
-
-    const ground = this.groundAt(pos.x, pos.z);
-    // Snap to the ground when landing, or when walking downhill (so we don't "bounce" down slopes).
-    if (pos.y <= ground || (this.velocity.y <= 0 && pos.y - ground < 0.5)) {
-      pos.y = ground;
+    let next = feet + this.velocity.y * dt;
+    if (next + BODY_HEIGHT > ceiling) { next = ceiling - BODY_HEIGHT; this.velocity.y = Math.min(this.velocity.y, 0); }
+    // Land, or stick to the floor when walking down stairs and slopes.
+    if (next <= ground || (this.onGround && this.velocity.y <= 0 && next - ground < 0.6)) {
+      next = ground;
       this.velocity.y = 0;
       this.onGround = true;
     } else {
       this.onGround = false;
     }
+    pos.y = next + EYE_HEIGHT;
   }
 }
