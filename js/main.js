@@ -6,7 +6,7 @@ import { Physics } from './engine/physics.js';
 import { LightPool } from './engine/lights.js';
 import { Kit } from './engine/kit.js';
 import { loadHeightmap, createTerrain, createWater, createOuterGround, WATER_LEVEL } from './world/terrain.js';
-import { BuildingIndex, minAreaRect, buildBuildings, buildWalls, buildCastle, buildQuays, buildBridges, scatterTrees } from './world/city.js';
+import { BuildingIndex, minAreaRect, buildBuildings, buildWalls, buildCastle, buildQuays, buildBridges, bridgeLines, scatterTrees } from './world/city.js';
 import { Player } from './player.js';
 import { UI, Minimap } from './ui.js';
 import { detectTouch, TouchControls } from './touch.js';
@@ -161,6 +161,16 @@ async function init() {
     }
     return { place: p, x, z, angle, w, d };
   });
+
+  // Keep the ends of every bridge clear of map buildings.
+  for (const br of bridgeLines(world, 6)) {
+    const [ax, az] = br.a, [bx, bz] = br.b, L = Math.hypot(bx - ax, bz - az);
+    const nx = -(bz - az) / L, nz = (bx - ax) / L;
+    for (let s = 0; s <= L; s += 1.5) for (const o of [-br.width / 2, 0, br.width / 2]) {
+      const hit = index.at(ax + ((bx - ax) * s) / L + nx * o, az + ((bz - az) * s) / L + nz * o);
+      if (hit) skipIds.add(hit.id);
+    }
+  }
 
   ui.setLoading('Building Holmstead…');
   for (const f of frames) {

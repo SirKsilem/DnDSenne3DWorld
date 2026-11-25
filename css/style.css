@@ -175,7 +175,7 @@ body.is-touch #info { max-height: 55vh; top: 12px; left: 12px; width: min(420px,
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
 }
 #minimap.big {
-  width: min(94vw, 112vh);
+  width: min(94vw, 100vh); /* the map is a little taller than wide */
   right: 50%; bottom: 50%;
   transform: translate(50%, 50%);
 }
@@ -348,7 +348,7 @@ body.is-touch #minimap {
   right: calc(16px + env(safe-area-inset-right));
   bottom: calc(16px + env(safe-area-inset-bottom));
 }
-body.is-touch #minimap.big { width: min(94vw, 112vh); right: 50%; bottom: 50%; }
+body.is-touch #minimap.big { width: min(94vw, 100vh); right: 50%; bottom: 50%; }
 
 /* Short screens (phones in landscape): a more compact menu */
 @media (max-height: 500px) {
@@ -358,6 +358,10 @@ body.is-touch #minimap.big { width: min(94vw, 112vh); right: 50%; bottom: 50%; }
   .card h3 { margin-top: 0.9em; }
   #start { padding: 0.5em 1.4em; font-size: 16px; }
   .controls { margin-top: 0.9em; font-size: 15px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+}
+
+@media (max-width: 600px), (max-height: 500px) {
+  .label.district { font-size: 15px; letter-spacing: 0.18em; }
 }
 
 @media (max-width: 600px) {

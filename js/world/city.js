@@ -417,8 +417,17 @@ export function buildQuays(ctx, world) {
   kit.finalize();
 }
 
+/** Bridges from world.json, lengthened 3 m at each end so they land on the street, not the water's edge. */
+export function bridgeLines(world, extra = 3) {
+  return world.bridges.map((br) => {
+    const [ax, az] = br.a, [bx, bz] = br.b;
+    const L = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / L, uz = (bz - az) / L;
+    return { ...br, a: [ax - ux * extra, az - uz * extra], b: [bx + ux * extra, bz + uz * extra] };
+  });
+}
+
 export function buildBridges(ctx, world) {
-  for (const br of world.bridges) {
+  for (const br of bridgeLines(world)) {
     const [ax, az] = br.a, [bx, bz] = br.b;
     const L = Math.hypot(bx - ax, bz - az);
     const mx = (ax + bx) / 2, mz = (az + bz) / 2;
@@ -438,7 +447,7 @@ export function buildBridges(ctx, world) {
       const t0 = -1 + (2 * i) / N, t1 = -1 + (2 * (i + 1)) / N;
       const zA = (t0 * L) / 2, zB = (t1 * L) / 2;
       const hA = deckAt(t0), hB = deckAt(t1);
-      kit.ramp(0, (zA + zB) / 2, W, zB - zA, hA, hB);
+      kit.ramp(0, (zA + zB) / 2, W, zB - zA + 0.12, hA, hB); // pieces overlap so there's no gap
       const top = Math.max(hA, hB);
       kit.box(W, stone ? top + 0.5 : 0.35, (zB - zA) + 0.05, stone ? 'paleStone' : 'plank', 0, stone ? -0.5 : top - 0.35, (zA + zB) / 2);
       for (const s of [-1, 1]) {
@@ -454,7 +463,7 @@ export function buildBridges(ctx, world) {
       kit.box(W + 0.6, 0.3, 4, 'darkStone', 0, y0 + rise + 0.85, 0);
     }
     for (const s of [-1, 1]) kit.segment(s * (W / 2 - 0.2), -L / 2 + 1, s * (W / 2 - 0.2), L / 2 - 1, { r: 0.25, y0: -10, y1: 30 });
-    kit.opening(0, 0, W + 2, L);
+    kit.opening(0, 0, W + 2, L + 4);
     kit.finalize();
   }
 }
