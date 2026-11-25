@@ -28,8 +28,8 @@ function halfBeam(x) {
   return t >= 0 ? Math.max(0.12, 4 * (1 - t ** 2.4)) : 4 * (1 - 0.45 * t * t);
 }
 function sheer(x) { // height of the top of the hull side
-  if (x < -7.2) return STERN_DECK + 1.0;
-  if (x < -5.6) return lerp(STERN_DECK + 1, DECK + 1, (x + 7.2) / 1.6);
+  if (x < -6.4) return STERN_DECK + 1.0;
+  if (x < -5.0) return lerp(STERN_DECK + 1, DECK + 1, (x + 6.4) / 1.4);
   if (x < 7.2) return DECK + 1.0;
   if (x < 8.4) return lerp(DECK + 1, FORE_DECK + 1, (x - 7.2) / 1.2);
   return FORE_DECK + 1.0 + Math.max(0, x - 11) * 0.35;
