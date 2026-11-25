@@ -117,7 +117,8 @@ async function init() {
   const { sky, horizon } = createSky();
   scene.add(sky);
   scene.fog = new THREE.Fog(horizon, 260, 1200);
-  scene.add(new THREE.HemisphereLight(0xd6e9ff, 0x6a5a40, 1.5));
+  scene.add(new THREE.HemisphereLight(0xd6e9ff, 0x8a7656, 1.4));
+  scene.add(new THREE.AmbientLight(0xfff1dc, 0.55)); // so interiors and ceilings aren't pitch black
   const sun = new THREE.DirectionalLight(0xfff0d8, 2.6);
   sun.castShadow = true;
   sun.shadow.mapSize.setScalar(touchMode ? 1024 : 2048);
@@ -353,12 +354,17 @@ async function init() {
     let nearest = Infinity;
     for (const loc of ctx.locations) {
       const d = Math.hypot(pos.x - loc.x, pos.z - loc.z);
-      if (loc.label) {
+      if (loc.radius > 0 && d < loc.radius && d < nearest) { nearest = d; nearby = loc; }
+    }
+    // Labels show through walls, so hide them all while you're at (or inside) a place.
+    for (const loc of ctx.locations) {
+      const d = Math.hypot(pos.x - loc.x, pos.z - loc.z);
+      if (loc.label && nearby) loc.label.element.style.opacity = 0;
+      else if (loc.label) {
         const [f0, f1] = loc.district ? DISTRICT_FADE : LABEL_FADE;
         const fadeIn = loc.district ? THREE.MathUtils.smoothstep(d, 90, 160) : 1;
         loc.label.element.style.opacity = fadeIn * (1 - THREE.MathUtils.smoothstep(d, f0, f1));
       }
-      if (loc.radius > 0 && d < loc.radius && d < nearest) { nearest = d; nearby = loc; }
     }
     if (ui.openLocation && infoOpenedAt && pos.distanceTo(infoOpenedAt) > 25) ui.hideInfo();
     ui.setPrompt(nearby);
