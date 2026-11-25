@@ -1,0 +1,86 @@
+{
+  "name": "The Realm",
+  "spawn": { "x": 0, "z": 45, "lookAt": [0, 0] },
+
+  "locations": [
+    {
+      "id": "thornwick",
+      "name": "Thornwick",
+      "type": "town",
+      "x": 0,
+      "z": 0,
+      "description": "A sleepy farming village gathered around an old stone well. The townsfolk are friendly, if a little wary of strangers since the livestock started going missing.\n\nPlaceholder text: replace this with your own notes."
+    },
+    {
+      "id": "gilded-flagon",
+      "name": "The Gilded Flagon",
+      "type": "tavern",
+      "x": 48,
+      "z": 22,
+      "rotation": -60,
+      "description": "A rowdy roadside inn run by a retired adventurer. Rooms are two silver a night; rumours are free if you buy a round."
+    },
+    {
+      "id": "spire-of-aldren",
+      "name": "Spire of Aldren",
+      "type": "tower",
+      "x": 140,
+      "z": -95,
+      "description": "A lone wizard's tower. A violet crystal turns slowly above its roof, and the door has no handle on the outside."
+    },
+    {
+      "id": "kaeldor-ruins",
+      "name": "Ruins of Kael'dor",
+      "type": "ruins",
+      "x": -135,
+      "z": -55,
+      "rotation": 20,
+      "description": "Moss-covered columns of a temple that predates the kingdom. Scholars argue about which god it was built for. Nobody argues about the noises at night."
+    },
+    {
+      "id": "rotfang-cave",
+      "name": "Rotfang Cave",
+      "type": "cave",
+      "x": -20,
+      "z": 175,
+      "rotation": 180,
+      "description": "Torches burn outside a cave in the foothills. Goblin tracks lead in. Few lead out."
+    },
+    {
+      "id": "ranger-camp",
+      "name": "Ranger Camp",
+      "type": "camp",
+      "x": 105,
+      "z": 115,
+      "description": "The Wardens of the Greenwood keep a small camp here. They trade maps and news for supplies."
+    },
+    {
+      "id": "whispering-stones",
+      "name": "The Whispering Stones",
+      "type": "shrine",
+      "x": -160,
+      "z": 110,
+      "description": "A ring of standing stones around an altar. On a still night you can hear voices between the stones."
+    },
+    {
+      "id": "greywatch-keep",
+      "name": "Greywatch Keep",
+      "type": "castle",
+      "x": 15,
+      "z": -150,
+      "description": "Seat of Lord Varric, protector of the valley. The garrison is stretched thin and the lord is hiring capable swords."
+    }
+  ],
+
+  "lakes": [
+    { "name": "Mirrormere", "x": -65, "z": 65, "radius": 45 }
+  ],
+
+  "roads": [
+    ["greywatch-keep", "thornwick", "gilded-flagon", "ranger-camp"],
+    ["thornwick", "kaeldor-ruins"],
+    ["thornwick", [90, -40], "spire-of-aldren"],
+    ["thornwick", [-20, 110], "rotfang-cave"],
+    ["kaeldor-ruins", [-150, 30], "whispering-stones"]
+  ]
+}
