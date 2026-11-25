@@ -240,7 +240,7 @@ hills = (np.sin(wx * 0.011 + 0.7) * np.cos(wz * 0.013 - 0.4) * 3.0
          + np.sin(wx * 0.027 + 2.1) * np.sin(wz * 0.023 + 1.3) * 1.3
          + np.sin(wx * 0.004 - 1.0) * 2.5)
 ramp = smoothstep(25, 220, d_city[GY, GX])
-land = CITY_GROUND + hills * ramp
+land = np.maximum(CITY_GROUND + hills * ramp, 1.4)  # hollows must stay above the river, or they flood
 outside = in_city[GY, GX] == 0
 bank = smoothstep(0, 18, d_water_out[GY, GX])
 land = np.where(outside, 0.5 + (land - 0.5) * bank, land)
