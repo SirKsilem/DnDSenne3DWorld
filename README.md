@@ -1,7 +1,26 @@
-# DnD 3D World
+# Holmstead in 3D
 
-A walkable 3D map of our campaign world that runs in the browser. Plain HTML + JavaScript with
-[Three.js](https://threejs.org/) loaded from a CDN: no build step, no Node.js, works on any web host.
+A walkable, low-poly 3D version of **Holmstead**, the town from our D&D campaign, built from the
+campaign map. It runs in the browser: plain HTML + JavaScript with [Three.js](https://threejs.org/)
+loaded from a CDN, so there is no build step, no Node.js, and it works on any web host (GitHub Pages too).
+
+Every building, the walls and gates, the castle, the river, the harbour basins, the fields and the
+roads come straight from the map image (`data/holmstead/source-map.jpg`). On top of that, a handful
+of places are built by hand with walkable interiors:
+
+| Map | Place | What's there |
+| --- | --- | --- |
+| T7 | The Laughing Lantern | Tavern: bar, tables, fireplace, owlbear head |
+| M13 | The Bubbling Flask | Alchemist: potion shelves, bubbling cauldron, glassware |
+| R1 | The Morninghall | Temple of Lathander: nave, pews, sun-disc altar, stained glass |
+| R2 | Shrine of the Anchor | Seafaring shrine to Valkur with the bronze anchor statue |
+| B5 | Hammerfall Forge | Blacksmith: forge, anvil, bellows, weapon racks |
+| R4 | Brightfurrow Farm | Farmhouse and barn, animals, fields |
+| – | Kelemvor's Rest | Graveyard by the Monastery Road: common graves and a section of crypts (the big one is open) |
+| S2/S3/H3/H4 | Holmstead Harbour | Docks, and the carrack *Wandering Gull*: deck, captain's cabin and hold |
+
+North follows the map's compass: **west is the top of the map**, so the readout in the corner
+says "N" when you face what is the right-hand side of the map.
 
 ## Running it
 
@@ -25,9 +44,9 @@ Then open <http://localhost:8000>.
 | Mouse | Look around (click the page first) |
 | W A S D / arrows | Walk |
 | Shift | Run |
-| Space | Jump |
+| Space | Jump (or swim up) |
 | E, or click a building | Read about a place |
-| M | Toggle the big map |
+| M, or click the minimap | Big map |
 | Esc | Pause / travel menu |
 
 **Phones and tablets** get on-screen controls automatically:
@@ -43,93 +62,67 @@ Then open <http://localhost:8000>.
 
 A device counts as touch when its main pointer is a finger. Laptops with touchscreens use the
 keyboard and mouse controls, but switch to touch controls as soon as you touch the screen.
-To force a mode, add `?touch` or `?desktop` to the address, e.g. `http://localhost:8000/?touch`.
+To force a mode, add `?touch` or `?desktop` to the address.
 
-The bottom-right corner shows your `x` / `z` position, which is handy for deciding where to put a new location.
+You can link straight to a place by adding its id, e.g. `http://localhost:8000/#laughing-lantern`.
 
-## Adding your own locations
+## Changing names and descriptions
 
-Everything about the world lives in [`data/locations.json`](data/locations.json). Edit it and refresh the page.
+Everything you'd want to edit as a DM is in [`data/holmstead/places.json`](data/holmstead/places.json):
 
-```json
-{
-  "id": "thornwick",
-  "name": "Thornwick",
-  "type": "town",
-  "x": 0,
-  "z": 0,
-  "rotation": 0,
-  "description": "First paragraph.\n\nSecond paragraph."
-}
+- `places`: the hand-built locations. Change `name`, `kind` and `description` freely
+  (a blank line, `\n\n`, starts a new paragraph). `x`/`z` are positions in metres; the corner of
+  the screen shows your current `x`/`z`, so you can walk somewhere and copy the numbers.
+- `districts`: the floating district names and their descriptions.
+- `spawn`: where you start.
+
+Watch the commas: a missing or extra comma makes the whole file invalid, and the page will say so.
+
+## How it's built
+
+```
+index.html                 page shell, HUD and menus
+css/style.css              styling
+data/holmstead/            the town
+  source-map.jpg           the campaign map everything is made from
+  places.json              hand-built places, districts, spawn (edit this)
+  world.json, buildings.json, heights.bin, ground.jpg, landuse.png, minimap.jpg
+                           generated from the map by tools/extract_map.py
+js/main.js                 loads everything, runs the game loop
+js/engine/physics.js       walls, floors, stairs, decks (what you can walk on and bump into)
+js/engine/kit.js           building kit used by the places (walls with doors, rooms, stairs, lights…)
+js/engine/lights.js        the few real lights follow you to the nearest fires and lanterns
+js/world/terrain.js        ground, river and water
+js/world/city.js           map buildings, walls, gates, castle, quays, bridges, trees
+js/places/*.js             the hand-built places
+js/player.js, touch.js, ui.js   walking, touch controls, HUD and minimap
+tools/extract_map.py       turns the map image into the generated data files
 ```
 
-| Field | Required | Meaning |
-| --- | --- | --- |
-| `name` | yes | Shown on the label, map and info panel. |
-| `x`, `z` | yes | Position in metres. The map runs from -300 to 300 on both axes; keep places within about ±190 so they don't end up in the mountains. `-z` is north. |
-| `type` | no | Which placeholder to build: `town`, `tavern`, `tower`, `castle`, `ruins`, `cave`, `camp`, `shrine`, `landmark` (default). |
-| `id` | no | Short name used by roads and links. Generated from `name` if left out. |
-| `description` | no | Text for the info panel. A blank line (`\n\n`) starts a new paragraph. |
-| `subtitle` | no | Replaces the small heading above the name (e.g. `"Capital of Eastmarch"`). |
-| `rotation` | no | Turn the building, in degrees. Entrances face south (`+z`) at 0. |
-| `scale` | no | Make the placeholder bigger or smaller (e.g. `1.5`). |
-| `radius` | no | Size of the flattened, tree-free area and the "Press E" range. |
-| `labelHeight` | no | How high the floating name sits. |
-| `model` | no | Path to your own `.glb` model (see below). |
-| `collisionRadius` | no | With `model`: how big an area (in metres) blocks walking. |
+### Rebuilding from a changed map
 
-Watch the commas: a missing or extra comma makes the whole file invalid. If the page shows
-"The world failed to load", the message tells you roughly where the mistake is.
+If the map image changes, regenerate the data (needs Python with numpy and OpenCV):
 
-### Lakes and roads
-
-```json
-"lakes": [
-  { "name": "Mirrormere", "x": -65, "z": 65, "radius": 45 }
-],
-"roads": [
-  ["greywatch-keep", "thornwick", "gilded-flagon"],
-  ["thornwick", [90, -40], "spire-of-aldren"]
-]
+```bash
+pip install numpy opencv-python-headless
 ```
 
-A road is a list of stops: location `id`s or `[x, z]` points to bend around things.
-
-### Start position
-
-`"spawn": { "x": 0, "z": 45, "lookAt": [0, 0] }` sets where visitors start.
-You can also link straight to a place by adding its id to the URL, e.g. `http://localhost:8000/#rotfang-cave`.
-
-## Using real 3D models
-
-Placeholders are built from simple shapes. To use a proper model, export or download a `.glb` file
-(from Blender, or free sites like [Poly Pizza](https://poly.pizza), [Kenney](https://kenney.nl/assets) or
-[Sketchfab](https://sketchfab.com)), put it in the `models/` folder and point to it:
-
-```json
-{ "name": "Thornwick", "x": 0, "z": 0, "model": "models/thornwick.glb", "scale": 2, "collisionRadius": 8 }
+```bash
+python3 tools/extract_map.py
 ```
 
-If the model fails to load, the placeholder for `type` is used instead and the browser console says why.
+The tool recognises the map by its colours (grey buildings, dark river, black walls). Roads outside
+the walls and the bridges are traced by hand at the top of the script, so adjust those if they move.
+
+### Adding a new hand-built place
+
+1. Copy one of the files in `js/places/` (the smaller ones like `alchemist.js` are a good start).
+2. Add an entry to `places` in `places.json` with `"module"` set to your file's name, its position,
+   and `"footprint": true` if it should replace the building drawn on the map at that spot.
+3. In the module, build with the kit in local coordinates: the origin is the building's centre
+   on the ground and `+z` is the front, facing the street.
 
 ## Putting it online
 
-It's a static site, so any host works: copy the files to a regular PHP/Apache web host, or turn on
-**GitHub Pages** for this repository (Settings → Pages → deploy from branch).
-
-## Project layout
-
-```
-index.html            page shell, HUD and menus
-css/style.css         styling
-data/locations.json   your world: locations, lakes, roads, spawn
-js/main.js            sets up the scene and runs the game loop
-js/terrain.js         landscape, lakes, roads, trees and rocks
-js/locations.js       placeholder buildings and model loading
-js/player.js          walking, jumping and collisions
-js/ui.js              info panel, prompts and minimap
-js/touch.js           phone/tablet detection and on-screen controls
-models/               your .glb files
-```
-
-Terrain shape (hills, mountain ring, map size) is tweaked at the top of `js/terrain.js`.
+It's a static site: copy the files to any web host, or use **GitHub Pages**
+(Settings → Pages → deploy from `main`, folder `/`).

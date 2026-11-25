@@ -1,14 +1,12 @@
-// HUD: info panel, interaction prompt, coordinates readout, start/pause overlay and minimap.
+// HUD: info panel, interaction prompt, compass/coordinates, start/pause overlay and minimap.
 
 import * as THREE from 'three';
-import { WORLD_SIZE, WATER_LEVEL, heightAt, terrainColor } from './terrain.js';
-import { TYPES } from './locations.js';
 
 const $ = (id) => document.getElementById(id);
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
 export class UI {
-  constructor(worldName) {
+  constructor(worldName, subtitle) {
     this.message = $('message');
     this.prompt = $('prompt');
     this.info = $('info');
@@ -16,8 +14,10 @@ export class UI {
     this.coords = $('coords');
     this.openLocation = null;
     this.touch = false;
+    this.north = [0, -1]; // world direction of north (x, z)
     document.title = worldName;
     $('world-name').textContent = worldName;
+    if (subtitle) document.querySelector('#overlay .subtitle').textContent = subtitle;
   }
 
   setTouchMode(touch) {
@@ -25,6 +25,11 @@ export class UI {
     this.promptFor = null;
     document.body.classList.toggle('is-touch', touch);
     $('start').textContent = touch ? 'Tap to explore' : 'Click to explore';
+  }
+
+  setLoading(text) {
+    this.message.hidden = false;
+    this.message.textContent = text;
   }
 
   hideMessage() { this.message.hidden = true; }
@@ -38,7 +43,7 @@ export class UI {
     const detail = document.createElement('p');
     detail.textContent = err?.message ?? String(err);
     const hint = document.createElement('p');
-    hint.textContent = 'Check data/locations.json for typos (a missing comma or quote is the usual culprit) and the browser console (F12) for details.';
+    hint.textContent = 'Check data/holmstead/places.json for typos (a missing comma or quote is the usual culprit) and the browser console (F12) for details.';
     this.message.append(strong, detail, hint);
   }
 
@@ -61,7 +66,7 @@ export class UI {
 
   showInfo(loc) {
     this.openLocation = loc;
-    $('info-type').textContent = loc.subtitle ?? TYPES[loc.type].label;
+    $('info-type').textContent = loc.kind ?? '';
     $('info-name').textContent = loc.name;
     const desc = $('info-desc');
     desc.replaceChildren();
@@ -89,28 +94,34 @@ export class UI {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = loc.name;
-      b.style.setProperty('--accent', TYPES[loc.type].color);
+      b.style.setProperty('--accent', loc.color ?? '#e0b866');
       b.addEventListener('click', () => onPick(loc));
       wrap.append(b);
     }
   }
 
-  // Shows where you are — handy for finding x/z values when adding locations.
+  // Where you are and which way you face — handy for placing new locations.
   setCoords(pos, dir) {
-    const deg = (THREE.MathUtils.radToDeg(Math.atan2(dir.x, -dir.z)) + 360) % 360;
+    const [nx, nz] = this.north;
+    const ex = -nz, ez = nx; // east is 90° clockwise from north, seen from above
+    const deg = (THREE.MathUtils.radToDeg(Math.atan2(dir.x * ex + dir.z * ez, dir.x * nx + dir.z * nz)) + 360) % 360;
     const heading = COMPASS[Math.round(deg / 45) % 8];
     this.coords.textContent = `x ${Math.round(pos.x)}  z ${Math.round(pos.z)}  ·  ${heading}`;
   }
 }
 
+/** The campaign map itself, with a "you are here" arrow. */
 export class Minimap {
-  constructor(canvas, locations, lakes) {
+  constructor(canvas, image, bounds, locations) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.image = image;
+    this.bounds = bounds;
     this.locations = locations;
-    this.lakes = lakes;
     this.big = false;
-    this.base = this.renderBase(220);
+    canvas.width = 640;
+    canvas.height = Math.round((640 * image.height) / image.width);
+    canvas.style.aspectRatio = `${image.width} / ${image.height}`;
   }
 
   toggle() {
@@ -118,75 +129,51 @@ export class Minimap {
     this.canvas.classList.toggle('big', this.big);
   }
 
-  // Pre-render the terrain once: colours plus simple hill shading.
-  renderBase(N) {
-    const c = document.createElement('canvas');
-    c.width = c.height = N;
-    const ctx = c.getContext('2d');
-    const img = ctx.createImageData(N, N);
-    const col = new THREE.Color(), rgb = { r: 0, g: 0, b: 0 };
-    const water = new THREE.Color(0x3d7fa3);
-    const step = WORLD_SIZE / N;
-    for (let j = 0; j < N; j++) {
-      for (let i = 0; i < N; i++) {
-        const x = -WORLD_SIZE / 2 + (i + 0.5) * step;
-        const z = -WORLD_SIZE / 2 + (j + 0.5) * step;
-        const h = heightAt(x, z);
-        if (h < WATER_LEVEL) col.copy(water);
-        else terrainColor(x, z, col);
-        col.getRGB(rgb, THREE.SRGBColorSpace);
-        const shade = h < WATER_LEVEL ? 1 : THREE.MathUtils.clamp(1 + (heightAt(x - step, z - step) - h) * 0.12, 0.6, 1.3);
-        const o = (j * N + i) * 4;
-        img.data[o] = Math.min(255, rgb.r * 255 * shade);
-        img.data[o + 1] = Math.min(255, rgb.g * 255 * shade);
-        img.data[o + 2] = Math.min(255, rgb.b * 255 * shade);
-        img.data[o + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    return c;
-  }
-
   draw(pos, dir) {
     const { ctx, canvas } = this;
-    const S = canvas.width;
-    const k = S / WORLD_SIZE;
-    const toMap = (v) => (v + WORLD_SIZE / 2) * k;
+    const [x0, z0, x1, z1] = this.bounds;
+    const W = canvas.width, H = canvas.height;
+    const mx = (x) => ((x - x0) / (x1 - x0)) * W;
+    const mz = (z) => ((z - z0) / (z1 - z0)) * H;
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(this.base, 0, 0, S, S);
+    if (this.big) {
+      ctx.drawImage(this.image, 0, 0, W, H);
+    } else {
+      // zoomed in around you: a 360 m window
+      const span = 360, sx = (span / (x1 - x0)) * this.image.width, sy = (span / (z1 - z0)) * this.image.height;
+      const cx = ((pos.x - x0) / (x1 - x0)) * this.image.width, cy = ((pos.z - z0) / (z1 - z0)) * this.image.height;
+      ctx.fillStyle = '#cfc6b8';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(this.image, cx - sx / 2, cy - sy / 2, sx, sy, 0, 0, W, H);
+    }
+    const toMap = this.big
+      ? (x, z) => [mx(x), mz(z)]
+      : (x, z) => [W / 2 + ((x - pos.x) / 360) * W, H / 2 + ((z - pos.z) / 360) * H];
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    if (this.big) {
-      ctx.font = 'italic 14px "EB Garamond", Georgia, serif';
-      ctx.fillStyle = 'rgba(230, 245, 255, 0.9)';
-      for (const l of this.lakes) if (l.name) ctx.fillText(l.name, toMap(l.x), toMap(l.z) + 5);
-    }
-
     for (const loc of this.locations) {
-      const x = toMap(loc.x), y = toMap(loc.z);
+      if (loc.district) continue;
+      const [x, y] = toMap(loc.x, loc.z);
+      if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
       ctx.beginPath();
-      ctx.arc(x, y, this.big ? 7 : 12, 0, Math.PI * 2);
-      ctx.fillStyle = TYPES[loc.type].color;
+      ctx.arc(x, y, this.big ? 6 : 9, 0, Math.PI * 2);
+      ctx.fillStyle = loc.color ?? '#e0b866';
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#1b1712';
       ctx.stroke();
-      if (this.big) {
-        ctx.font = '600 13px Cinzel, Georgia, serif';
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'rgba(20, 16, 12, 0.85)';
-        ctx.strokeText(loc.name, x, y - 9);
-        ctx.fillStyle = '#f4ead5';
-        ctx.fillText(loc.name, x, y - 9);
-      }
+      ctx.font = `600 ${this.big ? 13 : 20}px Cinzel, Georgia, serif`;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(20, 16, 12, 0.85)';
+      ctx.strokeText(loc.name, x, y - 10);
+      ctx.fillStyle = '#f4ead5';
+      ctx.fillText(loc.name, x, y - 10);
     }
 
-    // Player arrow (north is up, so the arrow points along the camera's x/z direction).
-    const px = toMap(pos.x), py = toMap(pos.z);
+    const [px, py] = toMap(pos.x, pos.z);
     const a = Math.atan2(dir.z, dir.x);
-    const r = this.big ? 9 : 14;
+    const r = this.big ? 10 : 18;
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate(a);
@@ -196,9 +183,9 @@ export class Minimap {
     ctx.lineTo(-r * 0.35, 0);
     ctx.lineTo(-r * 0.7, -r * 0.6);
     ctx.closePath();
-    ctx.fillStyle = '#ff4d3a';
+    ctx.fillStyle = '#e0412c';
     ctx.fill();
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = '#fff';
     ctx.stroke();
     ctx.restore();
