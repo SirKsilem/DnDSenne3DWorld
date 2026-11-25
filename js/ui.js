@@ -15,11 +15,16 @@ export class UI {
     this.overlay = $('overlay');
     this.coords = $('coords');
     this.openLocation = null;
+    this.touch = false;
     document.title = worldName;
     $('world-name').textContent = worldName;
-    if (matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches) {
-      $('touch-note').hidden = false;
-    }
+  }
+
+  setTouchMode(touch) {
+    this.touch = touch;
+    this.promptFor = null;
+    document.body.classList.toggle('is-touch', touch);
+    $('start').textContent = touch ? 'Tap to explore' : 'Click to explore';
   }
 
   hideMessage() { this.message.hidden = true; }
@@ -38,15 +43,20 @@ export class UI {
   }
 
   setPrompt(loc) {
-    if (loc && !this.openLocation) {
-      this.prompt.textContent = '';
-      const kbd = document.createElement('kbd');
-      kbd.textContent = 'E';
-      this.prompt.append(kbd, ` Read about ${loc.name}`);
-      this.prompt.hidden = false;
-    } else {
-      this.prompt.hidden = true;
+    // On touch screens the prompt is itself a button you tap.
+    const show = loc && !this.openLocation;
+    if (show && this.promptFor !== loc) {
+      this.prompt.replaceChildren();
+      if (this.touch) {
+        this.prompt.append(`📜 Read about ${loc.name}`);
+      } else {
+        const kbd = document.createElement('kbd');
+        kbd.textContent = 'E';
+        this.prompt.append(kbd, ` Read about ${loc.name}`);
+      }
     }
+    this.promptFor = show ? loc : null;
+    this.prompt.hidden = !show;
   }
 
   showInfo(loc) {

@@ -17,7 +17,19 @@ html, body {
   background: #1b1712;
   color: var(--ink);
   font-family: var(--body);
+  overscroll-behavior: none;
 }
+
+/* Desktop vs. touch: js/main.js puts .is-touch on <body> for phones and tablets. */
+body.is-touch .desktop-only { display: none !important; }
+body:not(.is-touch) .touch-only { display: none !important; }
+body.is-touch { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Stacking order: 3D view < labels < touch area < HUD < menus < messages */
+#touch-ui { z-index: 1; }
+#prompt, #info, #minimap, #coords, #crosshair { z-index: 2; }
+#overlay { z-index: 3; }
+#message { z-index: 4; }
 
 canvas.world { display: block; }
 
@@ -81,8 +93,21 @@ code {
   border-radius: 6px;
   background: var(--panel);
   border: 1px solid var(--panel-edge);
+  color: var(--ink);
+  font-family: var(--body);
   font-size: 18px;
+  white-space: nowrap;
   pointer-events: none;
+}
+#prompt[hidden] { display: none; }
+body.is-touch #prompt {
+  pointer-events: auto;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  max-width: calc(100vw - 200px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-color: var(--gold);
+  touch-action: manipulation;
 }
 
 #info {
@@ -99,6 +124,19 @@ code {
   font-size: 18px;
   line-height: 1.45;
 }
+#info-close {
+  position: absolute;
+  top: 6px; right: 8px;
+  width: 36px; height: 36px;
+  border: none;
+  background: none;
+  color: var(--ink-dim);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+#info-close:hover { color: var(--ink); }
+body.is-touch #info { max-height: 55vh; top: 12px; left: 12px; width: min(420px, calc(100vw - 24px)); }
 #info-type {
   margin: 0;
   color: var(--gold);
@@ -117,6 +155,7 @@ code {
 #info .hint { margin: 0.5em 0 0; color: var(--ink-dim); font-size: 14px; }
 
 #minimap {
+  cursor: pointer;
   position: fixed;
   right: 16px; bottom: 16px;
   width: 190px; height: 190px;
@@ -148,8 +187,7 @@ code {
 #overlay {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
   padding: 16px;
   background: rgba(12, 10, 8, 0.55);
   backdrop-filter: blur(2px);
@@ -158,6 +196,7 @@ code {
 #overlay[hidden] { display: none; }
 
 .card {
+  margin: auto; /* centres the card, but lets it scroll from the top when it's taller than the screen */
   width: min(520px, 100%);
   padding: 1.6em 1.8em;
   background: var(--panel);
@@ -197,7 +236,6 @@ code {
 }
 #start:hover { filter: brightness(1.15); }
 
-#touch-note { color: var(--gold); margin: 0.8em 0 0; }
 
 .controls {
   list-style: none;
@@ -211,6 +249,7 @@ code {
 }
 .controls li { display: flex; gap: 0.5em; align-items: baseline; }
 .controls li span { flex: 0 0 6.4em; white-space: nowrap; }
+.controls.touch-only li span { flex-basis: 8.2em; }
 
 #travel { display: flex; flex-wrap: wrap; gap: 0.4em; justify-content: center; }
 #travel button {
@@ -243,7 +282,78 @@ code {
 #message.error { border-color: #b5523b; text-align: left; }
 #message[hidden] { display: none; }
 
+/* ---------- Touch controls ---------- */
+#touch-ui { position: fixed; inset: 0; }
+#touch-ui[hidden] { display: none; }
+#touch-area { position: absolute; inset: 0; touch-action: none; }
+
+#joystick {
+  position: absolute;
+  left: calc(90px + env(safe-area-inset-left));
+  bottom: calc(70px + env(safe-area-inset-bottom));
+  width: 112px; height: 112px;
+  margin: 0 0 -56px -56px;
+  border-radius: 50%;
+  border: 2px solid rgba(244, 234, 213, 0.55);
+  background: rgba(20, 16, 12, 0.25);
+  opacity: 0.45;
+  pointer-events: none;
+}
+#joystick.active { opacity: 1; margin: -56px 0 0 -56px; }
+#stick {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 50px; height: 50px;
+  margin: -25px 0 0 -25px;
+  border-radius: 50%;
+  background: rgba(244, 234, 213, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+#joystick.running #stick { background: var(--gold); }
+
+.tbtn {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--panel-edge);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--heading);
+  font-weight: 700;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tbtn:active { background: #5a3f1a; }
+#btn-jump {
+  right: calc(28px + env(safe-area-inset-right));
+  bottom: calc(160px + env(safe-area-inset-bottom));
+  width: 72px; height: 72px;
+  font-size: 14px;
+}
+#btn-menu {
+  right: calc(12px + env(safe-area-inset-right));
+  top: calc(12px + env(safe-area-inset-top));
+  width: 46px; height: 46px;
+  font-size: 22px;
+}
+body.is-touch #minimap {
+  width: 120px; height: 120px;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+}
+body.is-touch #minimap.big { width: min(86vh, 86vw); height: min(86vh, 86vw); right: 50%; bottom: 50%; }
+
+/* Short screens (phones in landscape): a more compact menu */
+@media (max-height: 500px) {
+  .card { padding: 1em 1.2em; width: min(640px, 100%); }
+  .card h1 { font-size: 28px; }
+  .card .subtitle { margin-bottom: 0.7em; font-size: 16px; }
+  .card h3 { margin-top: 0.9em; }
+  #start { padding: 0.5em 1.4em; font-size: 16px; }
+  .controls { margin-top: 0.9em; font-size: 15px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+}
+
 @media (max-width: 600px) {
+  .label { font-size: 12px; }
   #minimap { width: 120px; height: 120px; }
   #coords { bottom: 144px; }
 }

@@ -22,6 +22,8 @@ export class Player {
     this.controls = new PointerLockControls(camera, domElement);
     this.velocity = new THREE.Vector3();
     this.keys = new Set();
+    this.touchMove = { x: 0, y: 0, run: false }; // set by the on-screen joystick (js/touch.js)
+    this.touchJump = false;
     this.onGround = false;
 
     addEventListener('keydown', (e) => this.keys.add(e.code));
@@ -46,24 +48,25 @@ export class Player {
 
   update(dt) {
     const k = this.keys;
-    const forward = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
-    const strafe = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
+    const t = this.touchMove;
+    const forward = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) + t.y;
+    const strafe = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0) + t.x;
 
     this.camera.getWorldDirection(_fwd);
     _fwd.y = 0;
     _fwd.normalize();
     _right.crossVectors(_fwd, UP);
     _wish.set(0, 0, 0).addScaledVector(_fwd, forward).addScaledVector(_right, strafe);
-    if (_wish.lengthSq() > 0) _wish.normalize();
+    if (_wish.lengthSq() > 1) _wish.normalize(); // keys give full speed; a half-pushed joystick walks slower
 
     const pos = this.camera.position;
-    let speed = k.has('ShiftLeft') || k.has('ShiftRight') ? RUN_SPEED : WALK_SPEED;
+    let speed = k.has('ShiftLeft') || k.has('ShiftRight') || t.run ? RUN_SPEED : WALK_SPEED;
     if (heightAt(pos.x, pos.z) < WATER_LEVEL - 0.6) speed *= 0.45; // wading
 
     const accel = 1 - Math.exp(-(this.onGround ? 12 : 3) * dt);
     this.velocity.x += (_wish.x * speed - this.velocity.x) * accel;
     this.velocity.z += (_wish.z * speed - this.velocity.z) * accel;
-    if (k.has('Space') && this.onGround) {
+    if ((k.has('Space') || this.touchJump) && this.onGround) {
       this.velocity.y = JUMP_SPEED;
       this.onGround = false;
     }
