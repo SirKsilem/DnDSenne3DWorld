@@ -287,9 +287,11 @@ export default {
     // ============================================================ deck fittings
     // whipstaff wheel on the sterncastle
     kit.box(0.5, 1.0, 0.5, 'darkWood', -8.3, Y(STERN_DECK), 0, on);
-    const wheel = kit.cyl(0.75, 0.75, 0.1, 'wood', -8.0, Y(STERN_DECK) + 1.5, 0, { ...on, seg: 10, rz: Math.PI / 2 });
-    wheel.position.x = -8.0;
-    for (let i = 0; i < 4; i++) kit.box(0.06, 1.9, 0.06, 'darkWood', -7.95, Y(STERN_DECK) + 1.5 - 0.95, 0, { ...on, rx: (i * Math.PI) / 4 });
+    kit.cyl(0.75, 0.75, 0.1, 'wood', -7.9, Y(STERN_DECK) + 1.5, 0, { ...on, seg: 10, rz: Math.PI / 2 });
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 4, hy = Y(STERN_DECK) + 1.5;
+      beam([-7.95, hy - Math.cos(a) * 0.95, -Math.sin(a) * 0.95], [-7.95, hy + Math.cos(a) * 0.95, Math.sin(a) * 0.95], 0.03, 'darkWood');
+    }
     const wh = P(-8.3, 0); kit.circle(wh[0], wh[1], 0.45, { y0: Y(STERN_DECK), y1: Y(STERN_DECK) + 2 });
     // stern lanterns
     lantern(-HALF_L - 0.2, Y(STERN_DECK) + 1.6, 1.4);
