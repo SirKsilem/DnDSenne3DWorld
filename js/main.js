@@ -181,6 +181,8 @@ async function init() {
       await mod.default.build(kit, { ...f.place, w: f.w, d: f.d }, ctx);
       kit.finalize();
       ctx.clickables.push(kit.group);
+      // travelling here puts you a few metres in front of the place's front side
+      if (kit.mainLocation && kit.mainLocation.approach === undefined) kit.mainLocation.approach = f.d / 2 + 5;
     } catch (err) {
       console.error(`Building "${f.place.name}" failed:`, err);
     }
@@ -237,7 +239,7 @@ async function init() {
     }
     if (loc.spawn) { player.teleport(loc.spawn.x, loc.spawn.z, loc.x, loc.z); return; }
     const a = loc.group ? loc.group.rotation.y : 0;
-    const dist = Math.max(loc.radius, 6) + 2;
+    const dist = loc.approach ?? Math.max(loc.radius, 6) + 2;
     const [x, z] = freeSpotNear(loc.x + Math.sin(a) * dist, loc.z + Math.cos(a) * dist);
     player.teleport(x, z, loc.x, loc.z);
   }

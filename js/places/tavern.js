@@ -164,7 +164,7 @@ export default {
     kit.cyl(0.3, 0.36, 0.35, 0xd8ccb0, dagX, 0.6, dagZ + 0.04, { seg: 7 }); // apron
     kit.ball(0.24, 0xe0b090, dagX, 1.08, dagZ);
     kit.cone(0.2, 0.45, 0xc0602a, dagX, 1.02, dagZ + 0.2, { rx: Math.PI, seg: 6 });
-    kit.ball(0.2, 0xc0602a, dagX, 1.22, dagZ - 0.06).scale.set(1.1, 0.7, 1.1);
+    kit.ball(0.2, 0xc0602a, dagX, 1.22, dagZ - 0.06).scale.set(0.22, 0.14, 0.22);
     kit.circle(dagX, dagZ, 0.45, { y0: 0, y1: 1.4 });
 
     // ---------------------------------------------------------------- tables, stools, benches
